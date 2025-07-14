@@ -3,6 +3,14 @@
 "Track the sun. Monitor energy. Save the planet."
 <br> A futuristic and dynamic **solar energy dashboard** that visualizes real-time and historical data about your solar system’s performance, cost savings, battery charge, and environmental impact — all wrapped in a glowing neon theme 🌐⚡.
 
+## 🔥 Dashboard Preview
+
+### 📸 Preview 1
+![Dashboard Preview 1](solar-monitor/assets/dashboard-preview1.png)
+
+### 📸 Preview 2
+![Dashboard Preview 2](solar-monitor/assets/dashboard-preview2.png)
+
 ## 🔥 Live Preview
 
 <img src="assets/dashboard-preview1.png" alt="Solar Dashboard Preview" width="500" />
