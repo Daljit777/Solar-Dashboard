@@ -5,8 +5,8 @@
 
 ## 🔥 Live Preview
 
-![Solar Dashboard UI 1](.solar-monitoring/assets/dashboard-preview1.png)
-![Solar Dashboard UI 2](.solar-monitoring/assets/dashboard-preview2.png)
+![Solar Dashboard UI 1](./assets/dashboard-preview1.png)
+![Solar Dashboard UI 2](./assets/dashboard-preview2.png)
 
 ## 🚀 Features at a Glance
 
