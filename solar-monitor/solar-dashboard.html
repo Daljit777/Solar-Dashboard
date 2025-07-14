@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --glass-bg: rgba(30, 32, 40, 0.65);
+      --glass-blur: 18px;
+      --neon-blue: #00eaff;
+      --neon-green: #00ffb3;
+      --neon-yellow: #ffe600;
+      --neon-pink: #ff00c8;
+      --text-main: #eaf6fb;
+      --text-dim: #b0b8c9;
+      --card-radius: 1.5rem;
+      --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      --nav-height: 70px;
+      --transition: 0.2s cubic-bezier(.4,2,.6,1);
+      --accent: var(--neon-blue);
+      --danger: #ff3b3b;
+      --warning: #ffb300;
+      --success: #00ffb3;
+      --bg-dark: #181a20;
+      --bg-light: #f7f7f7;
+      --bg-gradient: linear-gradient(135deg, #181a20 0%, #23243a 100%);
+      --bg-gradient-light: linear-gradient(135deg, #f7f7f7 0%, #eaf6fb 100%);
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', Arial, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      scroll-behavior: smooth;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      position: relative;
+      overflow-x: hidden;
+      transition: background var(--transition), color var(--transition);
+      margin-top: 0;
+      padding-top: 0;
+    }
+    /* Sticky Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(24, 26, 32, 0.85);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      padding: 0 2rem;
+      border-bottom: 1.5px solid rgba(0,234,255,0.08);
+      transition: background var(--transition);
+    }
+    .navbar .logo {
+      display: flex;
+      align-items: center;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--neon-blue);
+      text-shadow: 0 0 8px var(--neon-blue);
+      gap: 0.7rem;
+    }
+    .navbar .logo svg {
+      width: 2.2rem;
+      height: 2.2rem;
+      filter: drop-shadow(0 0 8px var(--neon-yellow));
+    }
+    .navbar .nav-links {
+      display: flex;
+      gap: 2.2rem;
+      align-items: center;
+    }
+    .navbar .nav-link {
+      color: var(--text-main);
+      font-weight: 500;
+      font-size: 1.1rem;
+      text-decoration: none;
+      position: relative;
+      transition: color var(--transition);
+    }
+    .navbar .nav-link.active,
+    .navbar .nav-link:hover {
+      color: var(--neon-blue);
+    }
+    .navbar .nav-link.active::after {
+      content: '';
+      display: block;
+      height: 2px;
+      width: 100%;
+      background: var(--neon-blue);
+      border-radius: 2px;
+      margin-top: 2px;
+      box-shadow: 0 0 8px var(--neon-blue);
+    }
+    .navbar .actions {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .navbar .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-main);
+      font-size: 1.5rem;
+      transition: color var(--transition);
+      position: relative;
+      padding: 0.3rem;
+      border-radius: 50%;
+      outline: none;
+    }
+    .navbar .icon-btn:hover {
+      color: var(--neon-blue);
+      background: rgba(0,234,255,0.08);
+    }
+    .navbar .profile {
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-pink) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px var(--glass-bg), 0 0 12px var(--neon-blue);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .navbar .notif-dropdown {
+      display: none;
+      position: absolute;
+      top: 2.7rem;
+      right: 0;
+      min-width: 270px;
+      background: var(--glass-bg);
+      box-shadow: var(--shadow);
+      border-radius: 1rem;
+      padding: 1rem 0.7rem;
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      gap: 0.7rem;
+      border: 1.5px solid rgba(0,234,255,0.08);
+    }
+    .navbar .notif-dropdown.active {
+      display: flex;
+      animation: fadeIn 0.2s;
+    }
+    .navbar .notif-dropdown .notif-title {
+      font-weight: 700;
+      color: var(--neon-blue);
+      margin-bottom: 0.3rem;
+      font-size: 1.1rem;
+    }
+    .navbar .notif-dropdown .notif-item {
+      background: rgba(0,234,255,0.07);
+      border-radius: 0.7rem;
+      padding: 0.6rem 0.8rem;
+      color: var(--text-main);
+      font-size: 0.98rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      border-left: 3px solid var(--neon-blue);
+      box-shadow: 0 0 8px 0 rgba(0,234,255,0.08);
+    }
+    .navbar .notif-dropdown .notif-item.danger {
+      border-left: 3px solid var(--danger);
+      color: var(--danger);
+    }
+    .navbar .notif-dropdown .notif-item.success {
+      border-left: 3px solid var(--success);
+      color: var(--success);
+    }
+    .navbar .notif-dropdown .notif-empty {
+      color: var(--text-dim);
+      text-align: center;
+      font-size: 0.95rem;
+      padding: 0.5rem 0;
+    }
+    /* Main Layout */
+    .container {
+      flex: 1;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2.2rem 1.2rem 1.2rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.2rem;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    /* Glassmorphism Card */
+    .glass-card {
+      background: var(--glass-bg);
+      box-shadow: var(--shadow);
+      border-radius: var(--card-radius);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1.5px solid rgba(0,234,255,0.08);
+      padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow var(--transition), transform var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .glass-card:hover {
+      box-shadow: 0 0 0 2px var(--neon-blue), 0 0 24px var(--neon-blue);
+      transform: translateY(-4px) scale(1.01);
+    }
+    .glass-card .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--neon-blue);
+      margin-top: 0.5rem;
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+    .glass-card .card-value {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.3rem;
+      text-shadow: 0 0 8px var(--neon-blue);
+      text-align: center;
+    }
+    .glass-card .card-desc {
+      font-size: 1rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+    /* Metric Cards Row */
+    .metrics-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .metrics-row .glass-card {
+      min-width: 220px;
+      flex: 1 1 220px;
+      max-width: 320px;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+    }
+    /* Chart Section */
+    .charts-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .chart-card {
+      min-height: 340px;
+      padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+      align-items: flex-start;
+    }
+    .chart-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 0.7rem;
+      gap: 1rem;
+    }
+    .chart-toolbar .date-range {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .chart-toolbar label {
+      color: var(--text-dim);
+      font-size: 0.98rem;
+      margin-right: 0.3rem;
+    }
+    .chart-toolbar input[type="date"] {
+      background: rgba(0,234,255,0.08);
+      border: 1px solid var(--neon-blue);
+      border-radius: 0.5rem;
+      color: var(--text-main);
+      padding: 0.2rem 0.7rem;
+      font-size: 1rem;
+      outline: none;
+      transition: border var(--transition);
+    }
+    .chart-toolbar input[type="date"]:focus {
+      border: 1.5px solid var(--neon-pink);
+    }
+    .chart-toolbar .export-btn {
+      background: var(--neon-blue);
+      color: #181a20;
+      border: none;
+      border-radius: 0.7rem;
+      padding: 0.5rem 1.1rem;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--neon-blue);
+      transition: background var(--transition), color var(--transition);
+    }
+    .chart-toolbar .export-btn:hover {
+      background: var(--neon-pink);
+      color: #fff;
+    }
+    /* Calculator */
+    .calculator-card {
+      min-width: 320px;
+      max-width: 420px;
+      margin: 0 auto;
+      align-items: stretch;
+      padding: 2rem 1.5rem 1.5rem 1.5rem;
+    }
+    .calculator-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      margin-bottom: 1.2rem;
+    }
+    .calculator-form label {
+      color: var(--text-dim);
+      font-size: 1rem;
+      margin-bottom: 0.2rem;
+    }
+    .calculator-form input {
+      background: rgba(0,234,255,0.08);
+      border: 1px solid var(--neon-blue);
+      border-radius: 0.5rem;
+      color: var(--text-main);
+      padding: 0.5rem 0.9rem;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border var(--transition);
+    }
+    .calculator-form input:focus {
+      border: 1.5px solid var(--neon-pink);
+    }
+    .calculator-form .input-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .calculator-form .input-row > div {
+      flex: 1 1 120px;
+      min-width: 120px;
+    }
+    .calculator-output {
+      background: rgba(0,234,255,0.08);
+      border-radius: 0.7rem;
+      padding: 1rem 1.2rem;
+      color: var(--neon-green);
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 0 8px var(--neon-green);
+    }
+    .calculator-error {
+      color: var(--danger);
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    /* System Health Gauge */
+    .gauge-container {
+      width: 180px;
+      height: 180px;
+      margin: 0 auto 1rem auto;
+      position: relative;
+    }
+    .gauge-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--neon-blue);
+      text-shadow: 0 0 8px var(--neon-blue);
+      text-align: center;
+    }
+    /* Weather Card */
+    .weather-card {
+      min-width: 220px;
+      max-width: 320px;
+      margin: 0 auto;
+      align-items: stretch;
+      padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+    }
+    .weather-main {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      margin-bottom: 0.7rem;
+    }
+    .weather-icon {
+      width: 48px;
+      height: 48px;
+      filter: drop-shadow(0 0 8px var(--neon-yellow));
+    }
+    .weather-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .weather-info .temp {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--neon-yellow);
+    }
+    .weather-info .desc {
+      color: var(--text-dim);
+      font-size: 1rem;
+    }
+    .weather-details {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+    .weather-details .detail {
+      color: var(--text-main);
+      font-size: 1rem;
+      text-align: center;
+    }
+    /* Alerts/Logs */
+    .alerts-card {
+      min-width: 220px;
+      max-width: 420px;
+      margin: 0 auto;
+      align-items: stretch;
+      padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+    }
+    .alerts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      margin-top: 0.5rem;
+    }
+    .alert-item {
+      background: rgba(0,234,255,0.07);
+      border-radius: 0.7rem;
+      padding: 0.7rem 1rem;
+      color: var(--text-main);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      border-left: 3px solid var(--neon-blue);
+      box-shadow: 0 0 8px 0 rgba(0,234,255,0.08);
+    }
+    .alert-item.danger {
+      border-left: 3px solid var(--danger);
+      color: var(--danger);
+    }
+    .alert-item.warning {
+      border-left: 3px solid var(--warning);
+      color: var(--warning);
+    }
+    .alert-item.success {
+      border-left: 3px solid var(--success);
+      color: var(--success);
+    }
+    .alert-empty {
+      color: var(--text-dim);
+      text-align: center;
+      font-size: 0.98rem;
+      padding: 0.5rem 0;
+    }
+    /* Panel Health Summary */
+    .panel-health {
+      margin-top: 1.2rem;
+      color: var(--text-main);
+      font-size: 1.05rem;
+      text-align: center;
+    }
+    /* Last Updated */
+    .last-updated {
+      color: var(--text-dim);
+      font-size: 0.98rem;
+      text-align: right;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    /* Responsive */
+    @media (max-width: 900px) {
+      .dashboard-grid, .charts-section {
+        grid-template-columns: 1fr;
+      }
+      .metrics-row {
+        flex-direction: column;
+        gap: 1.2rem;
+      }
+      .navbar .nav-links { gap: 1.2rem; }
+      .navbar .actions { gap: 0.7rem; }
+      .navbar .search-bar { min-width: 120px; }
+    }
+    @media (max-width: 600px) {
+      .navbar {
+        flex-direction: column;
+        height: auto;
+        padding: 0.7rem 0.7rem;
+        gap: 0.7rem;
+      }
+      .container {
+        padding: 1.2rem 0.3rem 0.7rem 0.3rem;
+      }
+      .glass-card, .calculator-card, .weather-card, .alerts-card {
+        padding: 1.7rem 0.7rem 0.7rem 0.7rem;
+      }
+      .card-title {
+        margin-top: 0.3rem;
+      }
+      .card-badge {
+        top: 0.6rem;
+        right: 0.6rem;
+        font-size: 0.85rem;
+        padding: 0.18em 0.6em;
+      }
+      .live-status-bar { font-size: 0.95rem; gap: 0.7rem; }
+    }
+    /* Animated Bulb SVG (bottom right) */
+    .bulb-svg-corner {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      z-index: 10;
+      pointer-events: none;
+      width: 120px;
+      height: 120px;
+      opacity: 0.85;
+      filter: drop-shadow(0 0 16px var(--neon-yellow));
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--neon-blue);
+      color: #181a20;
+      font-size: 0.92rem;
+      font-weight: 700;
+      padding: 0.25em 0.8em;
+      border-radius: 1em;
+      box-shadow: 0 0 8px var(--neon-blue);
+      letter-spacing: 0.5px;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0.92;
+    }
+    .nav-link, .export-btn, .icon-btn, .profile {
+      cursor: pointer;
+      outline: none;
+      transition: box-shadow 0.15s, background 0.15s, color 0.15s;
+    }
+    .nav-link:focus, .export-btn:focus, .icon-btn:focus, .profile:focus {
+      box-shadow: 0 0 0 2px var(--neon-blue);
+    }
+    .nav-link:active, .export-btn:active, .icon-btn:active, .profile:active {
+      background: rgba(0,234,255,0.12);
+      color: var(--neon-pink);
+    }
+    .export-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    /* Live Status Bar */
+    .live-status-bar {
+      width: 100vw;
+      min-height: 28px;
+      background: rgba(24,26,32,0.7);
+      color: var(--neon-yellow);
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      box-shadow: 0 2px 16px 0 rgba(31, 38, 135, 0.18);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1.5px solid rgba(0,234,255,0.08);
+      position: sticky;
+      top: var(--nav-height);
+      z-index: 99;
+      animation: statusBarSlide 0.7s;
+    }
+    @keyframes statusBarSlide {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .live-status-bar span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      animation: statusPulse 2s infinite alternate;
+    }
+    @keyframes statusPulse {
+      from { color: var(--neon-yellow); }
+      to { color: var(--neon-blue); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Particle Background -->
+  <canvas id="particle-bg"></canvas>
+  <!-- Sticky Navbar -->
+  <nav class="navbar">
+    <div class="logo">
+      <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" fill="#ffe600"/><path d="M16 2v4M16 26v4M2 16h4M26 16h4M7.8 7.8l2.8 2.8M21.4 21.4l2.8 2.8M7.8 24.2l2.8-2.8M21.4 10.6l2.8-2.8" stroke="#00eaff" stroke-width="2" stroke-linecap="round"/></svg>
+      Solar Dashboard
+    </div>
+    <div class="nav-links">
+      <a href="#" class="nav-link active">Dashboard</a>
+      <a href="#" class="nav-link">Reports</a>
+      <a href="#" class="nav-link">Settings</a>
+    </div>
+    <div class="actions">
+      <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <button class="icon-btn" id="notif-bell" title="Notifications">
+        <span id="notif-dot" style="display:none;position:absolute;top:7px;right:7px;width:8px;height:8px;background:var(--danger);border-radius:50%;"></span>
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <div class="profile" title="User">JD</div>
+      <div class="notif-dropdown" id="notif-dropdown">
+        <div class="notif-title">Notifications</div>
+        <div id="notif-list">
+          <div class="notif-empty">No new notifications</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <main class="container">
+    <!-- Metrics Row -->
+    <div class="metrics-row" id="dashboard-section">
+      <div class="glass-card" id="output-card">
+        <div class="card-title">Today's Output</div>
+        <div class="card-value" id="output-value">-- kWh</div>
+        <div class="card-desc">Live solar power output</div>
+      </div>
+      <div class="glass-card" id="cost-card">
+        <div class="card-title">Cost Saved</div>
+        <div class="card-value" id="cost-value">-- ₹</div>
+        <div class="card-desc">Total savings today</div>
+      </div>
+      <div class="glass-card" id="co2-card">
+        <div class="card-title">CO₂ Saved</div>
+        <div class="card-value" id="co2-value">-- kg</div>
+        <div class="card-desc">CO₂ emissions avoided</div>
+      </div>
+      <div class="glass-card" id="battery-card">
+        <div class="card-title">Battery</div>
+        <div class="card-value" id="battery-value">-- %</div>
+        <div class="card-desc">Battery charge level</div>
+      </div>
+      <div class="glass-card" id="uptime-card">
+        <div class="card-title">Uptime</div>
+        <div class="card-value" id="uptime-value">-- %</div>
+        <div class="card-desc">System uptime</div>
+      </div>
+    </div>
+    <!-- Charts Section -->
+    <div class="charts-section" id="reports-section">
+      <div class="glass-card chart-card">
+        <span class="card-badge">Real-time Output</span>
+        <div class="chart-toolbar">
+          <div class="date-range">
+            <label for="realtime-from">From</label>
+            <input type="date" id="realtime-from" />
+            <label for="realtime-to">To</label>
+            <input type="date" id="realtime-to" />
+          </div>
+          <button class="export-btn" id="export-realtime">Export</button>
+        </div>
+        <canvas id="realtime-chart"></canvas>
+        <div class="last-updated" id="realtime-updated">Last updated: --</div>
+      </div>
+      <div class="glass-card chart-card">
+        <span class="card-badge">Historical Output</span>
+        <div class="chart-toolbar">
+          <div class="date-range">
+            <label for="hist-from">From</label>
+            <input type="date" id="hist-from" />
+            <label for="hist-to">To</label>
+            <input type="date" id="hist-to" />
+          </div>
+          <button class="export-btn" id="export-hist">Export</button>
+        </div>
+        <canvas id="hist-chart"></canvas>
+        <div class="last-updated" id="hist-updated">Last updated: --</div>
+      </div>
+      <div class="glass-card chart-card">
+        <span class="card-badge">Panel vs Consumption</span>
+        <div class="chart-toolbar">
+          <button class="export-btn" id="export-panel">Export</button>
+        </div>
+        <canvas id="panel-chart"></canvas>
+        <div class="last-updated" id="panel-updated">Last updated: --</div>
+      </div>
+      <div class="glass-card chart-card">
+        <span class="card-badge">Cost Savings Trend</span>
+        <div class="chart-toolbar">
+          <div class="date-range">
+            <label for="savings-from">From</label>
+            <input type="date" id="savings-from" />
+            <label for="savings-to">To</label>
+            <input type="date" id="savings-to" />
+          </div>
+          <button class="export-btn" id="export-savings">Export</button>
+        </div>
+        <canvas id="savings-chart"></canvas>
+        <div class="last-updated" id="savings-updated">Last updated: --</div>
+      </div>
+    </div>
+    <!-- Smart Features Section -->
+    <div class="dashboard-grid" id="smart-features-section" style="margin-top:2.5rem;">
+      <!-- Left Column -->
+      <div style="display:flex;flex-direction:column;gap:2rem;">
+        <!-- Calculator -->
+        <div class="glass-card calculator-card">
+          <span class="card-badge">Calculator</span>
+          <div class="card-title">Solar Installation Calculator</div>
+          <form class="calculator-form" id="calc-form" autocomplete="off">
+            <div class="input-row">
+              <div>
+                <label for="calc-wattage">Panel Wattage (W)</label>
+                <input type="number" id="calc-wattage" min="100" max="600" step="10" required />
+              </div>
+              <div>
+                <label for="calc-cost">Cost per kW (₹)</label>
+                <input type="number" id="calc-cost" min="20000" max="100000" step="500" required />
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label for="calc-usage">Daily Usage (kWh)</label>
+                <input type="number" id="calc-usage" min="1" max="100" step="1" required />
+              </div>
+            </div>
+            <button class="export-btn" id="calc-btn" style="margin-bottom:0.7rem;width:100%;max-width:220px;align-self:center;">Calculate</button>
+          </form>
+          <div class="calculator-output" id="calc-output">Total Cost: --</div>
+          <div class="calculator-error" id="calc-error"></div>
+        </div>
+        <!-- Environmental Impact Card -->
+        <div class="glass-card" id="env-impact-card">
+          <span class="card-badge">Environmental Impact</span>
+          <div class="card-title">Your Impact</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.7rem;">
+            <div style="font-size:1.5rem;color:var(--neon-green);font-weight:700;">
+              <span id="trees-saved">--</span> Trees Saved
+            </div>
+            <div style="font-size:1.2rem;color:var(--neon-yellow);font-weight:600;">
+              <span id="kms-not-driven">--</span> Kms Not Driven
+            </div>
+          </div>
+          <div class="card-desc" style="margin-top:0.7rem;">Based on CO₂ saved</div>
+        </div>
+      </div>
+      <!-- Center Column -->
+      <div style="display:flex;flex-direction:column;gap:2rem;">
+        <!-- Weather Card -->
+        <div class="glass-card weather-card" id="weather-card">
+          <span class="card-badge">Weather</span>
+          <div class="card-title">Live Weather</div>
+          <div class="weather-main">
+            <svg class="weather-icon" id="weather-icon" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="16" fill="#ffe600"/>
+              <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="8s" repeatCount="indefinite"/>
+            </svg>
+            <div class="weather-info">
+              <div class="temp" id="weather-temp">--°C</div>
+              <div class="desc" id="weather-desc">Loading...</div>
+            </div>
+          </div>
+          <div class="weather-details">
+            <div class="detail" id="weather-sun">☀️ Sun: -- h</div>
+            <div class="detail" id="weather-cloud">☁️ Cloud: --%</div>
+          </div>
+        </div>
+        <!-- Tomorrow's Forecast Output -->
+        <div class="glass-card" id="tomorrow-forecast-card" style="align-items:center;">
+          <span class="card-badge">Tomorrow's Forecast</span>
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <svg id="tomorrow-icon" width="40" height="40" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="16" fill="#ffe600"/>
+              <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="8s" repeatCount="indefinite"/>
+            </svg>
+            <div style="font-size:1.4rem;font-weight:700;color:var(--neon-blue);">
+              <span id="tomorrow-kwh">--</span> kWh
+            </div>
+          </div>
+          <div class="card-desc" id="tomorrow-desc">Forecast: --</div>
+        </div>
+      </div>
+      <!-- Right Column -->
+      <div style="display:flex;flex-direction:column;gap:2rem;">
+        <!-- Energy Tips Panel -->
+        <div class="glass-card" id="energy-tips-card">
+          <span class="card-badge">Energy Tips</span>
+          <div class="card-title">Save More Energy</div>
+          <div id="energy-tip" style="font-size:1.1rem;color:var(--neon-green);margin:1rem 0;min-height:2.2rem;text-align:center;"></div>
+        </div>
+        <!-- Alerts & Logs -->
+        <div class="glass-card alerts-card">
+          <span class="card-badge">Alerts</span>
+          <div class="card-title">Alert Center</div>
+          <div class="alerts-list" id="alerts-list">
+            <div class="alert-empty">No alerts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Reports Section -->
+    <section id="reports-section-main" class="glass-card" style="margin:2rem auto;max-width:900px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <h2 style="color:var(--neon-blue);font-size:2rem;margin-bottom:1rem;">Reports</h2>
+      <p style="color:var(--text-dim);font-size:1.1rem;text-align:center;">Download and view detailed solar production, savings, and system performance reports here.</p>
+      <button class="export-btn" style="margin-top:1.2rem;">Download Sample Report</button>
+    </section>
+    <!-- Settings Section -->
+    <section id="settings-section-main" class="glass-card" style="margin:2rem auto;max-width:900px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <h2 style="color:var(--neon-pink);font-size:2rem;margin-bottom:1rem;">Settings</h2>
+      <p style="color:var(--text-dim);font-size:1.1rem;text-align:center;">Adjust your dashboard preferences, theme, and notification settings here.</p>
+      <button class="export-btn" style="margin-top:1.2rem;">Save Settings</button>
+    </section>
+  </main>
+  <!-- Animated Bulb SVG in Corner -->
+  <div class="bulb-svg-corner">
+    <svg viewBox="0 0 120 120" fill="none">
+      <circle cx="60" cy="60" r="50" fill="#ffe600" opacity="0.7">
+        <animate attributeName="r" values="50;60;50" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <g>
+        <rect x="30" y="80" width="60" height="20" rx="6" fill="#00eaff" opacity="0.7">
+          <animate attributeName="y" values="80;75;80" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="50" y="60" width="20" height="20" rx="5" fill="#00ffb3" opacity="0.7">
+          <animate attributeName="y" values="60;55;60" dur="2s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+      <g>
+        <line x1="60" y1="60" x2="60" y2="20" stroke="#ffe600" stroke-width="6">
+          <animate attributeName="y2" values="20;10;20" dur="2.5s" repeatCount="indefinite"/>
+        </line>
+        <line x1="60" y1="60" x2="100" y2="60" stroke="#ffe600" stroke-width="6">
+          <animate attributeName="x2" values="100;110;100" dur="2.5s" repeatCount="indefinite"/>
+        </line>
+      </g>
+    </svg>
+  </div>
+  <script>
+    // --- Theme Toggle ---
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    let darkMode = localStorage.getItem('solar-theme') !== 'light';
+    function setTheme(dark) {
+      document.body.style.background = dark ? 'var(--bg-gradient)' : 'var(--bg-gradient-light)';
+      document.body.style.color = dark ? 'var(--text-main)' : '#23243a';
+      themeIcon.textContent = dark ? '🌙' : '☀️';
+      localStorage.setItem('solar-theme', dark ? 'dark' : 'light');
+    }
+    setTheme(darkMode);
+    themeToggle.onclick = () => {
+      darkMode = !darkMode;
+      setTheme(darkMode);
+    };
+    // --- Notification Bell ---
+    const notifBell = document.getElementById('notif-bell');
+    const notifDropdown = document.getElementById('notif-dropdown');
+    notifBell.onclick = (e) => {
+      notifDropdown.classList.toggle('active');
+      e.stopPropagation();
+    };
+    document.body.onclick = () => notifDropdown.classList.remove('active');
+    notifDropdown.onclick = (e) => e.stopPropagation();
+    // --- Particle Background ---
+    const canvas = document.getElementById('particle-bg');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    function createParticles() {
+      particles = [];
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.7 + 0.7,
+          dx: (Math.random() - 0.5) * 0.2,
+          dy: (Math.random() - 0.5) * 0.2,
+          color: [
+            'rgba(0,234,255,0.7)',
+            'rgba(0,255,179,0.7)',
+            'rgba(255,230,0,0.7)',
+            'rgba(255,0,200,0.7)'
+          ][Math.floor(Math.random()*4)]
+        });
+      }
+    }
+    function animateParticles() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for (let p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 2*Math.PI);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    resizeCanvas();
+    createParticles();
+    animateParticles();
+    // --- KPI Card Simulation ---
+    function randomBetween(a, b, decimals=2) { return (Math.random() * (b - a) + a).toFixed(decimals); }
+    function updateKPIs() {
+      document.getElementById('output-value').textContent = randomBetween(18, 38) + ' kWh';
+      document.getElementById('cost-value').textContent = '₹' + randomBetween(120, 320, 0);
+      document.getElementById('co2-value').textContent = randomBetween(8, 18) + ' kg';
+      document.getElementById('battery-value').textContent = randomBetween(60, 100, 1) + ' %';
+      document.getElementById('uptime-value').textContent = randomBetween(98.5, 100, 2) + ' %';
+    }
+    updateKPIs();
+    setInterval(updateKPIs, 5000);
+    // --- Chart.js Data & Configs ---
+    function hoursArray() {
+      return Array.from({length: 24}, (_, h) => `${h}:00`);
+    }
+    function daysArray(n) {
+      const arr = [];
+      let d = new Date();
+      for (let i = n-1; i >= 0; i--) {
+        let day = new Date(d.getTime() - i*24*60*60*1000);
+        arr.push(day.toISOString().slice(0,10));
+      }
+      return arr;
+    }
+    // Real-time Output (24h line)
+    const realtimeCtx = document.getElementById('realtime-chart').getContext('2d');
+    let realtimeData = {
+      labels: hoursArray(),
+      datasets: [{
+        label: 'Output (kWh)',
+        data: Array.from({length:24},()=>randomBetween(0, 2)),
+        backgroundColor: 'rgba(0,234,255,0.3)',
+        borderColor: 'rgba(0,234,255,1)',
+        borderWidth: 2,
+        pointRadius: 3,
+        fill: true,
+        tension: 0.4
+      }]
+    };
+    let realtimeChart = new Chart(realtimeCtx, {
+      type: 'line',
+      data: realtimeData,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true, labels: { color: '#00eaff' } },
+          tooltip: { enabled: true },
+        },
+        scales: {
+          x: { ticks: { color: '#b0b8c9' } },
+          y: { ticks: { color: '#b0b8c9' } }
+        }
+      }
+    });
+    // Historical Output (7d bar)
+    const histCtx = document.getElementById('hist-chart').getContext('2d');
+    let histData = {
+      labels: daysArray(7),
+      datasets: [{
+        label: 'Production (kWh)',
+        data: Array.from({length:7},()=>randomBetween(15, 40)),
+        backgroundColor: 'rgba(255,230,0,0.3)',
+        borderColor: 'rgba(255,230,0,1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3
+      }]
+    };
+    let histChart = new Chart(histCtx, {
+      type: 'bar',
+      data: histData,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true, labels: { color: '#ffe600' } },
+          tooltip: { enabled: true },
+        },
+        scales: {
+          x: { ticks: { color: '#b0b8c9' } },
+          y: { ticks: { color: '#b0b8c9' } }
+        }
+      }
+    });
+    // Panel Output vs Consumption (dual line)
+    const panelCtx = document.getElementById('panel-chart').getContext('2d');
+    let panelData = {
+      labels: hoursArray(),
+      datasets: [
+        {
+          label: 'Panel Output (kWh)',
+          data: Array.from({length:24},()=>randomBetween(0, 2)),
+          backgroundColor: 'rgba(0,234,255,0.3)',
+          borderColor: 'rgba(0,234,255,1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Consumption (kWh)',
+          data: Array.from({length:24},()=>randomBetween(0, 2)),
+          backgroundColor: 'rgba(255,0,200,0.2)',
+          borderColor: 'rgba(255,0,200,1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
+        }
+      ]
+    };
+    let panelChart = new Chart(panelCtx, {
+      type: 'line',
+      data: panelData,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true, labels: { color: '#ff00c8' } },
+          tooltip: { enabled: true },
+        },
+        scales: {
+          x: { ticks: { color: '#b0b8c9' } },
+          y: { ticks: { color: '#b0b8c9' } }
+        }
+      }
+    });
+    // Cost Savings Trend (line)
+    const savingsCtx = document.getElementById('savings-chart').getContext('2d');
+    let savingsData = {
+      labels: daysArray(14),
+      datasets: [{
+        label: 'Savings (₹)',
+        data: Array.from({length:14},()=>randomBetween(8, 22)),
+        backgroundColor: 'rgba(0,255,179,0.3)',
+        borderColor: 'rgba(0,255,179,1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }]
+    };
+    let savingsChart = new Chart(savingsCtx, {
+      type: 'line',
+      data: savingsData,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true, labels: { color: '#00ffb3' } },
+          tooltip: { enabled: true },
+        },
+        scales: {
+          x: { ticks: { color: '#b0b8c9' } },
+          y: { ticks: { color: '#b0b8c9' } }
+        }
+      }
+    });
+    // --- Chart Export (CSV/PDF) ---
+    function exportChartToCSV(chart, filename) {
+      let csv = 'Label,Value\n';
+      chart.data.labels.forEach((label, i) => {
+        chart.data.datasets.forEach(ds => {
+          csv += `${label},${ds.data[i]}\n`;
+        });
+      });
+      const blob = new Blob([csv], {type: 'text/csv'});
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename + '.csv';
+      link.click();
+    }
+    function exportChartToPDF(chart, filename) {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF();
+      pdf.text(filename, 10, 10);
+      pdf.addImage(chart.toBase64Image(), 'PNG', 10, 20, 180, 80);
+      pdf.save(filename + '.pdf');
+    }
+    document.getElementById('export-realtime').onclick = () => {
+      exportChartToCSV(realtimeChart, 'realtime-data');
+      exportChartToPDF(realtimeChart, 'realtime-data');
+    };
+    document.getElementById('export-hist').onclick = () => {
+      exportChartToCSV(histChart, 'historical-data');
+      exportChartToPDF(histChart, 'historical-data');
+    };
+    document.getElementById('export-savings').onclick = () => {
+      exportChartToCSV(savingsChart, 'savings-data');
+      exportChartToPDF(savingsChart, 'savings-data');
+    };
+    document.getElementById('export-panel').onclick = () => {
+      exportChartToCSV(panelChart, 'panel-vs-consumption');
+      exportChartToPDF(panelChart, 'panel-vs-consumption');
+    };
+    // --- Date Range Filters ---
+    function updateChartRange(chart, fromId, toId, origData) {
+      const from = document.getElementById(fromId).value;
+      const to = document.getElementById(toId).value;
+      if (!from || !to) return;
+      const fromIdx = origData.labels.indexOf(from);
+      const toIdx = origData.labels.indexOf(to);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx > toIdx) return;
+      chart.data.labels = origData.labels.slice(fromIdx, toIdx+1);
+      chart.data.datasets.forEach((ds, i) => {
+        ds.data = origData.datasets[i].data.slice(fromIdx, toIdx+1);
+      });
+      chart.update();
+    }
+    document.getElementById('realtime-from').onchange = document.getElementById('realtime-to').onchange = () => updateChartRange(realtimeChart, 'realtime-from', 'realtime-to', realtimeData);
+    document.getElementById('hist-from').onchange = document.getElementById('hist-to').onchange = () => updateChartRange(histChart, 'hist-from', 'hist-to', histData);
+    document.getElementById('savings-from').onchange = document.getElementById('savings-to').onchange = () => updateChartRange(savingsChart, 'savings-from', 'savings-to', savingsData);
+    // --- Last Updated Timestamp ---
+    function updateTimestamps() {
+      const now = new Date().toLocaleString();
+      document.getElementById('realtime-updated').textContent = 'Last updated: ' + now;
+      document.getElementById('hist-updated').textContent = 'Last updated: ' + now;
+      document.getElementById('savings-updated').textContent = 'Last updated: ' + now;
+      document.getElementById('panel-updated').textContent = 'Last updated: ' + now;
+    }
+    updateTimestamps();
+    setInterval(updateTimestamps, 60000);
+    // --- Simulate Real-Time Chart Data ---
+    setInterval(() => {
+      // Real-time chart: shift and push new value
+      realtimeData.datasets[0].data.shift();
+      realtimeData.datasets[0].data.push(randomBetween(0, 2));
+      realtimeChart.update();
+      // Panel chart: shift and push new values
+      panelData.datasets[0].data.shift();
+      panelData.datasets[0].data.push(randomBetween(0, 2));
+      panelData.datasets[1].data.shift();
+      panelData.datasets[1].data.push(randomBetween(0, 2));
+      panelChart.update();
+    }, 5000);
+    // --- Calculator Logic ---
+    const calcForm = document.getElementById('calc-form');
+    const calcOutput = document.getElementById('calc-output');
+    const calcError = document.getElementById('calc-error');
+    function validateCalc() {
+      const wattage = parseFloat(document.getElementById('calc-wattage').value);
+      const costPerKW = parseFloat(document.getElementById('calc-cost').value);
+      const usage = parseFloat(document.getElementById('calc-usage').value);
+      if (
+        isNaN(wattage) || isNaN(costPerKW) || isNaN(usage) ||
+        wattage < 100 || costPerKW < 20000 || usage < 1
+      ) {
+        calcOutput.textContent = 'Total Cost: --';
+        calcError.textContent = 'Please enter valid values.';
+        return false;
+      }
+      calcError.textContent = '';
+      return { wattage, costPerKW, usage };
+    }
+    function doCalculation(e) {
+      if (e) e.preventDefault();
+      const vals = validateCalc();
+      if (!vals) return;
+      const { wattage, costPerKW, usage } = vals;
+      const totalCost = (wattage / 1000) * costPerKW;
+      const monthlySaved = usage * 30;
+      const annualSaved = usage * 365;
+      const roi = totalCost / (annualSaved * 6); // ₹6/kWh assumed
+      calcOutput.innerHTML = `Total Cost: <span style='color:var(--neon-blue)'>₹${totalCost.toLocaleString(undefined,{maximumFractionDigits:0})}</span><br>Monthly Energy Saved: <span style='color:var(--neon-green)'>${monthlySaved.toLocaleString(undefined,{maximumFractionDigits:0})} kWh</span><br>ROI: <span style='color:var(--neon-yellow)'>${roi.toFixed(2)} years</span>`;
+    }
+    calcForm.onsubmit = doCalculation;
+    calcForm.oninput = doCalculation;
+    // --- Weather Simulation ---
+    function updateWeather() {
+      const temp = randomBetween(22, 38, 1);
+      const cloud = randomBetween(5, 60, 0);
+      const sun = randomBetween(6, 12, 1);
+      document.getElementById('weather-temp').textContent = temp + '°C';
+      document.getElementById('weather-cloud').textContent = '☁️ Cloud: ' + cloud + '%';
+      document.getElementById('weather-sun').textContent = '☀️ Sun: ' + sun + ' h';
+      document.getElementById('weather-desc').textContent = temp > 32 ? 'Hot & Sunny' : temp > 26 ? 'Mild & Clear' : 'Cool & Cloudy';
+    }
+    updateWeather();
+    setInterval(updateWeather, 10000);
+    // --- Alerts & Logs Simulation ---
+    const alertSets = [
+      [
+        { type: 'danger', msg: 'Low battery: 18%' },
+        { type: 'warning', msg: 'Panel 2 output low' },
+        { type: 'success', msg: 'Maintenance completed' }
+      ],
+      [
+        { type: 'danger', msg: 'Panel Fault: P3' },
+        { type: 'warning', msg: 'Maintenance due in 2 days' }
+      ],
+      [
+        { type: 'success', msg: 'All systems optimal' }
+      ]
+    ];
+    let alertIdx = 0;
+    function renderAlerts() {
+      const list = document.getElementById('alerts-list');
+      list.innerHTML = '';
+      const alerts = alertSets[alertIdx % alertSets.length];
+      if (!alerts || alerts.length === 0) {
+        list.innerHTML = '<div class="alert-empty">No alerts</div>';
+        return;
+      }
+      alerts.forEach(a => {
+        const el = document.createElement('div');
+        el.className = 'alert-item ' + a.type;
+        el.textContent = a.msg;
+        list.appendChild(el);
+      });
+    }
+    renderAlerts();
+    setInterval(() => {
+      alertIdx++;
+      renderAlerts();
+    }, 9000);
+    // --- Environmental Impact Logic ---
+    function updateEnvImpact() {
+      // Use CO₂ saved from the KPI card (simulate or extract value)
+      let co2Text = document.getElementById('co2-value').textContent;
+      let co2 = parseFloat(co2Text);
+      if (isNaN(co2)) co2 = randomBetween(8, 18); // fallback
+      // 1 mature tree absorbs ~21kg CO₂/year, 1km car emits ~0.2kg CO₂
+      let trees = Math.round(co2 / (21/365));
+      let kms = Math.round(co2 / 0.2);
+      document.getElementById('trees-saved').textContent = trees;
+      document.getElementById('kms-not-driven').textContent = kms;
+    }
+    updateEnvImpact();
+    setInterval(updateEnvImpact, 5000);
+    // --- Tomorrow's Forecast Logic ---
+    function updateTomorrowForecast() {
+      // Simulate tomorrow's kWh and weather
+      const kwh = randomBetween(18, 38);
+      const isSunny = Math.random() > 0.4;
+      document.getElementById('tomorrow-kwh').textContent = kwh;
+      document.getElementById('tomorrow-desc').textContent = isSunny ? 'Sunny' : 'Cloudy';
+      const icon = document.getElementById('tomorrow-icon');
+      icon.innerHTML = isSunny
+        ? '<circle cx="24" cy="24" r="16" fill="#ffe600"/><animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="8s" repeatCount="indefinite"/>'
+        : '<ellipse cx="24" cy="28" rx="16" ry="10" fill="#b0b8c9"/><circle cx="24" cy="20" r="10" fill="#ffe600"/>';
+    }
+    updateTomorrowForecast();
+    setInterval(updateTomorrowForecast, 10000);
+    // --- Energy Tips Logic ---
+    const tips = [
+      'Use appliances during peak sunlight hours.',
+      'Keep panels clean for max efficiency.',
+      'Monitor battery charge to avoid deep discharge.',
+      'Schedule heavy loads when solar output is high.',
+      'Check for shading on panels regularly.',
+      'Use energy-efficient appliances.',
+      'Turn off unused devices to save power.',
+      'Store excess energy in batteries for night use.'
+    ];
+    let tipIdx = 0;
+    function updateEnergyTip() {
+      document.getElementById('energy-tip').textContent = tips[tipIdx % tips.length];
+      tipIdx++;
+    }
+    updateEnergyTip();
+    setInterval(updateEnergyTip, 7000);
+    // --- Navigation Links Scroll ---
+    const navMap = {
+      'Dashboard': 'dashboard-section',
+      'Reports': 'reports-section-main',
+      'Settings': 'settings-section-main'
+    };
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.onclick = (e) => {
+        e.preventDefault();
+        const text = link.textContent.trim();
+        const targetId = navMap[text];
+        if (targetId) {
+          const el = document.getElementById(targetId);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      };
+    });
+    // --- End ---
+  </script>
+</body>
+</html> 
