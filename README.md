@@ -5,6 +5,8 @@
 
 ## 🔥 Live Preview
 
+<img src="assets/dashboard-preview1.png" alt="Solar Dashboard Preview" width="500" />
+
 ![Solar Dashboard UI 1](./assets/dashboard-preview1.png)
 ![Solar Dashboard UI 2](./assets/dashboard-preview2.png)
 
